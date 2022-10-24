@@ -9,6 +9,11 @@ android {
     compileSdkVersion rootProject.compileSdkVersion
     buildToolsVersion "29.0.2"
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     defaultConfig {
         applicationId "com.udacity.project4"
         minSdkVersion rootProject.minSdkVersion
@@ -121,6 +126,9 @@ dependencies {
     //Maps & Geofencing
     implementation "com.google.android.gms:play-services-location:$playServicesVersion"
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
+
+    implementation platform('com.google.firebase:firebase-bom:31.0.1')
+    implementation 'com.firebaseui:firebase-ui-auth:5.0.0'
 
 
 }
