@@ -15,6 +15,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.R
+import com.udacity.project4.locationreminders.RemindersActivity
 import kotlinx.android.synthetic.main.fragment_main.*
 const val SIGN_IN_REQUEST_CODE = 1001
 class MainFragment : Fragment() {
@@ -36,9 +37,7 @@ private val viewModel by viewModels<LoginViewModel>()
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loginBtn.setOnClickListener {
-            launchSignin()
-        }
+      observeAuthenticationState()
     }
 
     private fun launchSignin() {
@@ -85,21 +84,42 @@ private val viewModel by viewModels<LoginViewModel>()
         viewModel.authenticationState.observe(viewLifecycleOwner, Observer { authenticationState ->
             when (authenticationState) {
                 AuthenticationState.AUTHENTICATED -> {
+                    loginBtn.text = getString(R.string.logout)
+                    loginBtn.setOnClickListener {
+                        AuthUI.getInstance().signOut(requireContext())
 
-                        // TODO implement logging out user in next step
+                    }
+                    activity?.let {
+                        val intent = Intent(it, RemindersActivity::class.java)
+                        it.startActivity(intent)
                     }
 
-                    // TODO 2. If the user is logged in,
-                    // you can customize the welcome message they see by
-                    // utilizing the getFactWithPersonalization() function provided
+
+
+
 
                 }
-                else -> {
+                // TODO implement logging out user in next step
+                AuthenticationState.UNAUTHENTICATED -> {
+                    loginBtn.text = getString(R.string.login)
+                    loginBtn.setOnClickListener {
+                        launchSignin()
+                    }
+
+
+
                     // TODO 3. Lastly, if there is no logged-in user,
                     // auth_button should display Login and
                     //  launch the sign in screen when clicked.
                 }
             }
+
+                    // TODO 2. If the user is logged in,
+                    // you can customize the welcome message they see by
+                    // utilizing the getFactWithPersonalization() function provided
+
+
+
         })
     }
 }
