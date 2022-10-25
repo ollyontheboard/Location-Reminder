@@ -47,6 +47,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
+        val mapFragment = childFragmentManager.findFragmentById(R.id.select_map) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
 //        TODO: add the map setup implementation
 //        TODO: zoom to the user location after taking his permission
@@ -93,7 +95,15 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     override fun onMapReady(p0: GoogleMap?) {
-        map = p0
+        if (p0 != null) {
+            map = p0
+        }
+        val latitude = 6.682055
+        val longitude = 3.187615
+        val homeLatLng = LatLng(latitude,longitude)
+        val zoomLevel = 15f
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng,zoomLevel))
+
 
     }
 
