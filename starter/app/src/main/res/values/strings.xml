@@ -46,4 +46,5 @@
     <string name="login_txt">LOGIN</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="select_locatiion">Select Locatiion</string>
 </resources>

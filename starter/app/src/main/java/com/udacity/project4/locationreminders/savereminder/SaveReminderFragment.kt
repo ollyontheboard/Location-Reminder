@@ -1,21 +1,37 @@
 package com.udacity.project4.locationreminders.savereminder
 
+import android.Manifest
+import android.annotation.TargetApi
+import android.content.ContentValues.TAG
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.material.snackbar.Snackbar
+import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSaveReminderBinding
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
-
+private const val REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE = 66
+private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 67
+private const val LOCATION_PERMISSION_INDEX = 0
+private const val BACKGROUND_LOCATION_PERMISSION_INDEX = 1
 class SaveReminderFragment : BaseFragment() {
     //Get the view model this time as a single to be shared with the another fragment
     override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSaveReminderBinding
+    private val runningQOrLater = android.os.Build.VERSION.SDK_INT >=
+            android.os.Build.VERSION_CODES.Q
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,11 +63,97 @@ class SaveReminderFragment : BaseFragment() {
             val latitude = _viewModel.latitude
             val longitude = _viewModel.longitude.value
 
+            requestForegroundAndBackgroundLocationPermissions()
+
 //            TODO: use the user entered reminder details to:
 //             1) add a geofencing request
 //             2) save the reminder to the local db
         }
     }
+    @TargetApi(29)
+    private fun foregroundAndBackgroundLocationPermissionApproved(): Boolean {
+        //check foreground location(only for less than android q)
+
+        val foregroundLocationApproved = (
+                PackageManager.PERMISSION_GRANTED ==
+                        ActivityCompat.checkSelfPermission(requireContext(),
+                            Manifest.permission.ACCESS_FINE_LOCATION))
+        //if running android q or later, you need to check background location permission approved as well
+        val backgroundPermissionApproved =
+            if (runningQOrLater) {
+                PackageManager.PERMISSION_GRANTED ==
+                        ActivityCompat.checkSelfPermission(
+                            requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        )
+            } else {
+                //background permission always granted for lower than android q
+                true
+            }
+        return foregroundLocationApproved && backgroundPermissionApproved
+    }
+    @TargetApi(29 )
+    private fun requestForegroundAndBackgroundLocationPermissions() {
+        //check if the permissions have been approved, and return from method if true
+        if (foregroundAndBackgroundLocationPermissionApproved())
+            return
+        //create permissions array with foreground location permission only initially
+        var permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        //resultcode will change depending on if device is running android q or not
+        val resultCode = when {
+            //when running q or later, add background location permission to the permissions array
+            //and set the result code to request for both foreground and background permissions
+            runningQOrLater -> {
+                permissionsArray += Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE
+            }
+            //else when running lower than android q set result code to only request foreground location permission
+            else -> REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
+        }
+        Log.d(TAG, "Request foreground only location permission")
+        ActivityCompat.requestPermissions(
+            requireActivity(),
+            permissionsArray,
+            resultCode
+        )
+    }
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        Log.d(TAG, "onRequestPermissionResult")
+
+        if (
+            //was interrupted
+            grantResults.isEmpty() ||
+            //foreground permission was denied
+            grantResults[LOCATION_PERMISSION_INDEX] == PackageManager.PERMISSION_DENIED ||
+            //running android q or later and background permission was denied
+            (requestCode == REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE &&
+                    grantResults[BACKGROUND_LOCATION_PERMISSION_INDEX] ==
+                    PackageManager.PERMISSION_DENIED))
+        {
+            Log.i("SaveReminderFrag", "Access is denied and snackbar will be thrown" +
+                    "Location services must be enabled to use the app")
+            Snackbar.make(
+
+                binding.saveReminder,
+                R.string.permission_denied_explanation,
+                Snackbar.LENGTH_INDEFINITE
+            )
+                .setAction(R.string.settings) {
+                    startActivity(Intent().apply {
+                        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        data = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                }.show()
+        } else {
+            checkDeviceLocationSettingsAndStartGeofence()
+
+        }
+    }
+    private fun  checkDeviceLocationSettingsAndStartGeofence(){}
 
     override fun onDestroy() {
         super.onDestroy()

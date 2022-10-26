@@ -15,6 +15,7 @@ import android.view.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -40,6 +41,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
     private lateinit var map: GoogleMap
+    private lateinit var poi : PointOfInterest
     private val REQUEST_LOCATION_PERMISSION = 1
 
     override fun onCreateView(
@@ -63,12 +65,25 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
 
 //        TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
+        binding.selectLocBtn.setOnClickListener {
+            onLocationSelected()
+        }
+
 
         return binding.root
     }
 
     private fun onLocationSelected() {
+        _viewModel.apply {
+            reminderSelectedLocationStr.value = poi.name
+            selectedPOI.value= poi
+            longitude.value = poi.latLng.longitude
+            latitude.value = poi.latLng.latitude
+        }
+        findNavController().popBackStack()
+
+
+
         //        TODO: When the user confirms on the selected location,
         //         send back the selected location details to the view model
         //         and navigate back to the previous fragment to save the reminder and add the geofence
@@ -109,7 +124,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         val homeLatLng = LatLng(latitude,longitude)
         val zoomLevel = 15f
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng,zoomLevel))
-        map.addMarker(MarkerOptions().position(homeLatLng))
+        val defaultLocation = MarkerOptions().position(homeLatLng)
+        map.addMarker(defaultLocation)
         setMapLongClick(map)
         setPoiClick(map)
         enableMyLocation()
@@ -130,6 +146,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun setMapLongClick(map: GoogleMap){
         map.setOnMapClickListener {latLng ->
+
             // A Snippet is Additional text that's displayed below the title.
             val snippet = String.format(
                 Locale.getDefault(),
@@ -152,6 +169,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 MarkerOptions().position(pointOfInterest.latLng)
                     .title(pointOfInterest.name)
             )
+            poi = pointOfInterest
             poiMarker.showInfoWindow()
         }
     }
