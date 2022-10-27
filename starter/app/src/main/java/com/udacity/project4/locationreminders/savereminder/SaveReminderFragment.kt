@@ -181,10 +181,12 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
                 try {
-                    exception.startResolutionForResult(requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON)
+                    Log.d("SaveReminder", "sending location request " )
+                    requireActivity().startIntentSenderForResult(
+                        exception.resolution.intentSender,REQUEST_TURN_DEVICE_LOCATION_ON,null,0,0,0)
+
                 } catch (sendEx: IntentSender.SendIntentException) {
-                    Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
+                    Log.d("SaveReminder", "Error getting location settings resolution: " + sendEx.message)
                 }
             } else {
                 Snackbar.make(
