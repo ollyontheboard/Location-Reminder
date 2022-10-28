@@ -112,8 +112,11 @@ class SaveReminderFragment : BaseFragment() {
     @TargetApi(29 )
     private fun requestForegroundAndBackgroundLocationPermissions() {
         //check if the permissions have been approved, and return from method if true
-        if (foregroundAndBackgroundLocationPermissionApproved())
-            return
+        if (foregroundAndBackgroundLocationPermissionApproved()){
+           checkDeviceLocationSettingsAndStartGeofence()
+           return
+        }
+
         //create permissions array with foreground location permission only initially
         var permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         //resultcode will change depending on if device is running android q or not
